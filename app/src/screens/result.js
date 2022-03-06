@@ -11,11 +11,11 @@ import { Chip } from 'react-native-paper';
 
 export default function Result() {
   const [hasPermission, setHasPermission] = useState(null);
-  const [scanned, setScanned] = useState(true);
+  const [scanned, setScanned] = useState(false);
   const [data, setData] = useState('');
   const [score, setScore] = useState(20);
   const [analysis, setAnalysis] = useState(['Too many redirects','Suspicious domain'])
-  const [type, setType] = useState("spam")
+  const [type, setType] = useState("unknown")
 
   const qrtypes = {spam:"https://img.icons8.com/fluency/48/000000/spam.png",ad:"https://img.icons8.com/external-smashingstocks-circular-smashing-stocks/65/000000/external-advertisement-internet-marketing-smashingstocks-circular-smashing-stocks-2.png",
   useful:'https://img.icons8.com/color/48/000000/thumb-up--v1.png', malicious:"https://img.icons8.com/external-vitaliy-gorbachev-lineal-color-vitaly-gorbachev/60/000000/external-hacker-cryptocurrency-vitaliy-gorbachev-lineal-color-vitaly-gorbachev.png",
@@ -24,7 +24,7 @@ export default function Result() {
     const [markers, setMarkers]= useState([{"latlng":{
         "latitude": 25.76684817404011,
         "longitude": -80.19163068383932,
-      },'type':qrtypes[type]}]);
+      },'type':type}]);
       const [marker, setmarker]= useState([{"latlng":{
         "latitude": 25.76684817404011,
         "longitude": -80.19163068383932,
@@ -47,7 +47,7 @@ export default function Result() {
 
       fetch("https://us-central1-aiot-fit-xlab.cloudfunctions.net/safeqr", requestOptions)
         .then(response => response.json())
-        .then(result => setMarkers(result.markers))
+        .then(result => {console.log(result);setMarkers(result.markers)})
         .catch(error => console.log('error', error));
     }
 
@@ -70,6 +70,28 @@ export default function Result() {
       .catch(error => console.log('error', error));
     }
 
+    const _analyzeQR = () => {
+      var myHeaders = new Headers();
+      myHeaders.append("Content-Type", "application/json");
+
+      var raw = JSON.stringify({
+        "action": "analyzeqr",
+        "qrcode": data
+      });
+
+      var requestOptions = {
+        method: 'POST',
+        headers: myHeaders,
+        body: raw,
+        redirect: 'follow'
+      };
+
+      fetch("https://us-central1-aiot-fit-xlab.cloudfunctions.net/safeqr", requestOptions)
+        .then(response => response.json())
+        .then(result => {console.log(result); setAnalysis([result.result])})
+        .catch(error => console.log('error', error));
+    }
+
 
 
   const navigation = useNavigation();
@@ -84,6 +106,7 @@ export default function Result() {
   const handleBarCodeScanned = ({ type, data }) => {
     setScanned(true);
     setData(data);
+    _analyzeQR();
     _getAllMarkers();
   };
 
@@ -146,7 +169,7 @@ export default function Result() {
                             latitudeDelta: .005,
                             longitudeDelta: .005
                             }} 
-                            onPress={(e) => {setMarkers([...markers,{ latlng: e.nativeEvent.coordinate, type:type}]); setmarker({"action": "reportqrmarker", latlng: e.nativeEvent.coordinate, type:type, timestamp:Date.now.toString(),'data':data})}}>
+                            onPress={(e) => {setMarkers([...markers,{ latlng: e.nativeEvent.coordinate, type:type}]); setmarker({"action": "reportqrmarker", latlng: e.nativeEvent.coordinate, type:type, timestamp:Date.now().toString(),'data':data})}}>
                             {
                                 markers.map((marker, i) => (
                                     <MapView.Marker key={i} coordinate={marker.latlng} title={marker.type} image={{uri:qrtypes[marker.type]}} >
