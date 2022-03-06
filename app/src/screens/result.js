@@ -11,23 +11,64 @@ import { Chip } from 'react-native-paper';
 
 export default function Result() {
   const [hasPermission, setHasPermission] = useState(null);
-  const [scanned, setScanned] = useState(false);
+  const [scanned, setScanned] = useState(true);
   const [data, setData] = useState('');
   const [score, setScore] = useState(20);
   const [analysis, setAnalysis] = useState(['Too many redirects','Suspicious domain'])
   const [type, setType] = useState("spam")
 
-  const spam = "https://img.icons8.com/fluency/48/000000/spam.png";
-    const ad= "https://img.icons8.com/external-smashingstocks-circular-smashing-stocks/65/000000/external-advertisement-internet-marketing-smashingstocks-circular-smashing-stocks-2.png";
-    const useful = 'https://img.icons8.com/color/48/000000/thumb-up--v1.png';
-    const malicious = "https://img.icons8.com/external-vitaliy-gorbachev-lineal-color-vitaly-gorbachev/60/000000/external-hacker-cryptocurrency-vitaliy-gorbachev-lineal-color-vitaly-gorbachev.png";
-    const game = "https://img.icons8.com/external-flat-wichaiwi/64/000000/external-game-gamefi-flat-wichaiwi-2.png";
-    const unknown = "https://img.icons8.com/color-glass/16/000000/why-us-male.png";
+  const qrtypes = {spam:"https://img.icons8.com/fluency/48/000000/spam.png",ad:"https://img.icons8.com/external-smashingstocks-circular-smashing-stocks/65/000000/external-advertisement-internet-marketing-smashingstocks-circular-smashing-stocks-2.png",
+  useful:'https://img.icons8.com/color/48/000000/thumb-up--v1.png', malicious:"https://img.icons8.com/external-vitaliy-gorbachev-lineal-color-vitaly-gorbachev/60/000000/external-hacker-cryptocurrency-vitaliy-gorbachev-lineal-color-vitaly-gorbachev.png",
+  game:"https://img.icons8.com/external-flat-wichaiwi/64/000000/external-game-gamefi-flat-wichaiwi-2.png", unknown:"https://img.icons8.com/color-glass/16/000000/why-us-male.png"};
   
     const [markers, setMarkers]= useState([{"latlng":{
         "latitude": 25.76684817404011,
         "longitude": -80.19163068383932,
-      },'type':spam}]);
+      },'type':qrtypes[type]}]);
+      const [marker, setmarker]= useState([{"latlng":{
+        "latitude": 25.76684817404011,
+        "longitude": -80.19163068383932,
+      },'type':qrtypes[type]}]);
+
+    const _getAllMarkers = () => {
+      var myHeaders = new Headers();
+      myHeaders.append("Content-Type", "application/json");
+
+      var raw = JSON.stringify({
+        "action": "getallmarkers"
+      });
+
+      var requestOptions = {
+        method: 'POST',
+        headers: myHeaders,
+        body: raw,
+        redirect: 'follow'
+      };
+
+      fetch("https://us-central1-aiot-fit-xlab.cloudfunctions.net/safeqr", requestOptions)
+        .then(response => response.json())
+        .then(result => setMarkers(result.markers))
+        .catch(error => console.log('error', error));
+    }
+
+    const _reportQR = () => {
+      var myHeaders = new Headers();
+      myHeaders.append("Content-Type", "application/json");
+
+      var raw = JSON.stringify(marker);
+
+      var requestOptions = {
+      method: 'POST',
+      headers: myHeaders,
+      body: raw,
+      redirect: 'follow'
+      };
+
+      fetch("https://us-central1-aiot-fit-xlab.cloudfunctions.net/safeqr", requestOptions)
+      .then(response => response.json())
+      .then(result => console.log(result))
+      .catch(error => console.log('error', error));
+    }
 
 
 
@@ -43,7 +84,7 @@ export default function Result() {
   const handleBarCodeScanned = ({ type, data }) => {
     setScanned(true);
     setData(data);
-    alert(`Bar code with type ${type} and data ${data} has been scanned!`);
+    _getAllMarkers();
   };
 
   if (hasPermission === null) {
@@ -72,18 +113,18 @@ export default function Result() {
                 style={{flex:1}}
                 />
         </MaskedView>
-      {scanned &&<BarCodeScanner
+      {!scanned &&<BarCodeScanner
         onBarCodeScanned={scanned ? undefined : handleBarCodeScanned}
         style={StyleSheet.absoluteFillObject}
       />}
-      {!scanned && <View>
+      {scanned && <View>
           <Text style={{fontWeight:'bold', color:"#FFF", fontSize:15, marginTop:'5%', textAlign:'center'}}>Scanned:{data}</Text>
           <Text style={{backgroundColor:score<25?"red":score>75?"green":"orange", color:"#FFF", width:'40%', alignSelf:'center', textAlign:'center', 
           borderRadius:10, fontWeight:'bold', marginTop:'5%'}}>
               {score<25?"Potentially Dangerous":score>75?"Safe and verified":"No reports"}</Text>
               <Text style={{backgroundColor:"#222", color:"#FFF", width:'30%', alignSelf:'center', textAlign:'center', 
           borderRadius:10, fontWeight:'bold', marginTop:'5%'}}>
-              scam</Text>
+              {type}</Text>
               <View style={{alignSelf:'center', backgroundColor:"#111", padding:'5%', borderRadius:10, marginTop:'5%'}}>
                   <Text style={{color:"white", fontWeight:'bold'}}>Analysis:</Text>
                   {analysis.map((item)=><View><Text style={{color:"white"}}>{item}</Text></View>)}
@@ -91,12 +132,12 @@ export default function Result() {
                   <View>
                   <Text style={{position:'relative',fontSize:14,margin:'auto', textAlign:'center', color:'#FFF', fontFamily:'Roboto', marginTop:'1.5%',alignSelf:'center'}} >Add a pin to the map</Text>
                     <View style={{flexDirection:'row', justifyContent:'space-evenly', width:'80%', flexWrap:'wrap', alignSelf:'center'}}>
-                    <TouchableOpacity onPress={()=>setType(spam)}><Chip style={{width:100, marginVertical:'5%'}} avatar={<Image source={{uri:spam}} style={{width:30, height:30}}></Image>} >spam</Chip></TouchableOpacity>
-                    <TouchableOpacity onPress={()=>setType(malicious)}><Chip style={{width:100, marginVertical:'5%'}} avatar={<Image source={{uri:malicious}} style={{width:30, height:30}}></Image>} >malicious</Chip></TouchableOpacity>
-                    <TouchableOpacity onPress={()=>setType(ad)}><Chip style={{width:100, marginVertical:'5%'}} avatar={<Image source={{uri:ad}} style={{width:30, height:30}}></Image>} >ad</Chip></TouchableOpacity>
-                    <TouchableOpacity onPress={()=>setType(useful)}><Chip style={{width:100, marginVertical:'5%'}} avatar={<Image source={{uri:useful}} style={{width:30, height:30}}></Image>} >useful</Chip></TouchableOpacity>
-                    <TouchableOpacity onPress={()=>setType(game)}><Chip style={{width:100, marginVertical:'5%'}} avatar={<Image source={{uri:game}} style={{width:30, height:30}}></Image>} >game</Chip></TouchableOpacity>
-                    <TouchableOpacity onPress={()=>setType(unknown)}><Chip style={{width:100, marginVertical:'5%'}} avatar={<Image source={{uri:unknown}} style={{width:30, height:30}}></Image>} >unknown</Chip></TouchableOpacity></View>
+                    <TouchableOpacity onPress={()=>setType("spam")}><Chip style={{width:100, marginVertical:'5%'}} avatar={<Image source={{uri:qrtypes.spam}} style={{width:30, height:30}}></Image>} >spam</Chip></TouchableOpacity>
+                    <TouchableOpacity onPress={()=>setType("malicious")}><Chip style={{width:100, marginVertical:'5%'}} avatar={<Image source={{uri:qrtypes.malicious}} style={{width:30, height:30}}></Image>} >malicious</Chip></TouchableOpacity>
+                    <TouchableOpacity onPress={()=>setType("ad")}><Chip style={{width:100, marginVertical:'5%'}} avatar={<Image source={{uri:qrtypes.ad}} style={{width:30, height:30}}></Image>} >ad</Chip></TouchableOpacity>
+                    <TouchableOpacity onPress={()=>setType("useful")}><Chip style={{width:100, marginVertical:'5%'}} avatar={<Image source={{uri:qrtypes.useful}} style={{width:30, height:30}}></Image>} >useful</Chip></TouchableOpacity>
+                    <TouchableOpacity onPress={()=>setType("game")}><Chip style={{width:100, marginVertical:'5%'}} avatar={<Image source={{uri:qrtypes.game}} style={{width:30, height:30}}></Image>} >game</Chip></TouchableOpacity>
+                    <TouchableOpacity onPress={()=>setType("unknown")}><Chip style={{width:100, marginVertical:'5%'}} avatar={<Image source={{uri:qrtypes.unknown}} style={{width:30, height:30}}></Image>} >unknown</Chip></TouchableOpacity></View>
                       </View>
                       <MapView style={{width: 300,height: 200, alignSelf:'center'}} 
                         initialRegion={{
@@ -105,11 +146,11 @@ export default function Result() {
                             latitudeDelta: .005,
                             longitudeDelta: .005
                             }} 
-                            onPress={(e) => setMarkers([...markers,{ latlng: e.nativeEvent.coordinate, type:type}])}>
+                            onPress={(e) => {setMarkers([...markers,{ latlng: e.nativeEvent.coordinate, type:type}]); setmarker({"action": "reportqrmarker", latlng: e.nativeEvent.coordinate, type:type, timestamp:Date.now.toString(),'data':data})}}>
                             {
                                 markers.map((marker, i) => (
-                                    <MapView.Marker key={i} coordinate={marker.latlng} image={{uri:marker.type}} >
-                                    {console.log(marker.latlng)}
+                                    <MapView.Marker key={i} coordinate={marker.latlng} title={marker.type} image={{uri:qrtypes[marker.type]}} >
+                                    {console.log(marker.type,qrtypes[marker.type])}
                                     </MapView.Marker>
                                     
                                     
@@ -119,7 +160,7 @@ export default function Result() {
                     colors={['#B21ED7', '#2A49E1']}
                     style={{width:'50%', height:50, borderRadius:30, justifyContent:'center', alignSelf:'center', marginTop:'5%'}}
                     >
-                        <TouchableOpacity onPress={()=>setScanned(false)}>
+                        <TouchableOpacity onPress={()=>{setScanned(false);_reportQR()}}>
                         <Text style={{fontWeight:'bold', textAlign:'center', textAlignVertical:'center', color:"#FFF"}}>Add Pin</Text>
                         </TouchableOpacity>
                     </LinearGradient>
