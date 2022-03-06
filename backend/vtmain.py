@@ -32,13 +32,13 @@ def geturl(s):
     return "no valid url found"
 
 async def main2():
-    virustotal = VirusTotal("100faff390becea72e324fe38dd56e8b7f64d933bc5050eae7a45fe3dbdeb9ef")
+    virustotal = VirusTotal("geturown")
     id = await virustotal.analyze_url("https://github.com")
     result = await virustotal.get_analyze(id)
     print(result)
     
 def main():
-    virustotal = VirusTotal("100faff390becea72e324fe38dd56e8b7f64d933bc5050eae7a45fe3dbdeb9ef")
+    virustotal = VirusTotal("geturown")
     id = virustotal.analyze_url2("https://hotwire.com")
     result = virustotal.get_analyze2(id)
     print(result)
